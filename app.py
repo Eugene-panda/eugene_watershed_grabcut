@@ -24,7 +24,7 @@ st.set_page_config(
 # ============================================================
 
 MODEL_PATH = Path(__file__).with_name(
-    "eugene_watershed_grabcut_svm.joblib"
+    "eugene_watershed_svm.joblib"
 )
 
 DEFAULT_LABELS = [
@@ -1202,8 +1202,7 @@ st.title(
 )
 
 st.caption(
-    "Marker-Controlled Watershed → GrabCut Refinement "
-    "→ Banana-Only Colour Cleanup → RBF SVM"
+    "Marker-Controlled Watershed Prediction + GrabCut Visual Enhancement"
 )
 
 
@@ -1276,12 +1275,17 @@ with st.sidebar:
     )
 
     st.write(
-        "**Supporting refinement**"
+        "**Visual enhancement only**"
     )
 
     st.code(
         "GrabCut + Banana-Only Colour Cleanup",
         language=None,
+    )
+
+    st.caption(
+        "GrabCut is shown for visual comparison only. "
+        "The prediction is made by the Watershed-only SVM."
     )
 
     st.write(
@@ -1299,10 +1303,10 @@ with st.sidebar:
             f"{float(bundle['watershed_test_accuracy']) * 100:.2f}%",
         )
 
-    if "enhanced_test_accuracy" in bundle:
+    if "grabcut_test_accuracy" in bundle:
         st.metric(
-            "GrabCut refined test accuracy",
-            f"{float(bundle['enhanced_test_accuracy']) * 100:.2f}%",
+            "GrabCut experiment accuracy",
+            f"{float(bundle['grabcut_test_accuracy']) * 100:.2f}%",
         )
 
 
@@ -1355,11 +1359,11 @@ try:
     )
 
     # IMPORTANT:
-    # This joblib was trained on the final
-    # Watershed + GrabCut refined colour cut-out.
+    # The final prediction model is the Watershed-only model.
+    # GrabCut is computed below for visual enhancement only.
     features = rgb_pixel_vector(
-        grabcut[
-            "refined_colour_cutout"
+        watershed[
+            "colour_cutout"
         ],
         svm_image_size,
     )
@@ -1499,15 +1503,15 @@ with right:
             f"{confidence * 100:.2f}%",
         )
 
-    if "enhanced_test_accuracy" in bundle:
+    if "test_accuracy" in bundle:
         st.metric(
-            "Model held-out test accuracy",
-            f"{float(bundle['enhanced_test_accuracy']) * 100:.2f}%",
+            "Watershed model test accuracy",
+            f"{float(bundle['test_accuracy']) * 100:.2f}%",
         )
 
     st.caption(
-        "The prediction uses the final GrabCut-refined "
-        "colour banana cut-out."
+        "The prediction uses the Marker-Controlled Watershed "
+        "colour cut-out. GrabCut below is visual enhancement only."
     )
 
 
@@ -1637,14 +1641,14 @@ if "watershed_test_accuracy" in bundle:
 st.divider()
 
 st.header(
-    "After GrabCut Refinement"
+    "After GrabCut — Visual Enhancement Only"
 )
 
 st.write(
     "The Watershed mask is used as the initial object estimate. "
     "GrabCut then refines foreground/background separation, "
-    "followed by the banana-only colour cleanup used in the "
-    "final trained model."
+    "followed by banana-only colour cleanup. This section is "
+    "for visual comparison and does NOT affect the prediction above."
 )
 
 
@@ -1699,10 +1703,11 @@ with grab_cols[3]:
     )
 
 
-if "enhanced_test_accuracy" in bundle:
+if "grabcut_test_accuracy" in bundle:
     st.caption(
-        "Recorded held-out accuracy for Watershed + GrabCut refinement: "
-        f"{float(bundle['enhanced_test_accuracy']) * 100:.2f}%"
+        "Recorded experimental accuracy for Watershed + GrabCut: "
+        f"{float(bundle['grabcut_test_accuracy']) * 100:.2f}% — "
+        "shown for comparison only."
     )
 
 
@@ -1787,10 +1792,10 @@ if (
 st.divider()
 
 st.caption(
-    "Final prediction pipeline: "
+    "Prediction pipeline: "
     "Upload → Resize → Gaussian → Grayscale → Sobel Gradient → "
-    "Marker-Controlled Watershed → GrabCut Refinement → "
-    "Banana-Only Colour Cleanup → Final Colour Cut-Out → "
+    "Marker-Controlled Watershed → Watershed Colour Cut-Out → "
     f"{svm_image_size[0]}×{svm_image_size[1]} RGB Features → "
-    "StandardScaler → RBF SVM → Ripeness Prediction"
+    "StandardScaler → RBF SVM → Ripeness Prediction. "
+    "GrabCut is displayed separately as a visual enhancement experiment."
 )
